@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>🎮 Number Battle Online</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Segoe UI',sans-serif;
+}
+
+body{
+min-height:100vh;
+background:linear-gradient(135deg,#0f172a,#1e293b,#312e81);
+display:flex;
+justify-content:center;
+align-items:center;
+color:white;
+overflow:hidden;
+}
+
+.container{
+text-align:center;
+width:90%;
+max-width:700px;
+}
+
+h1{
+font-size:3rem;
+margin-bottom:15px;
+color:#00f7ff;
+text-shadow:
+0 0 10px #00f7ff,
+0 0 20px #00f7ff,
+0 0 40px #00f7ff;
+}
+
+#score{
+font-size:28px;
+font-weight:bold;
+padding:15px;
+border-radius:20px;
+background:rgba(255,255,255,.08);
+backdrop-filter:blur(10px);
+border:1px solid rgba(255,255,255,.2);
+margin-bottom:20px;
+box-shadow:0 0 20px rgba(0,255,255,.4);
+}
+
+#target{
+font-size:80px;
+font-weight:bold;
+color:#ffe600;
+margin:20px 0;
+text-shadow:
+0 0 10px #ffe600,
+0 0 20px #ffe600,
+0 0 50px #ff9100;
+animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+50%{
+transform:scale(1.15);
+}
+}
+
+#winner{
+height:60px;
+font-size:40px;
+font-weight:bold;
+color:#00ff88;
+text-shadow:
+0 0 10px #00ff88,
+0 0 30px #00ff88;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(5,1fr);
+gap:15px;
+margin-top:20px;
+}
+
+.cell{
+height:90px;
+border:none;
+border-radius:20px;
+font-size:30px;
+font-weight:bold;
+cursor:pointer;
+color:white;
+background:linear-gradient(135deg,#00c6ff,#0072ff);
+box-shadow:
+0 0 15px rgba(0,198,255,.7),
+0 6px 0 #004fc5;
+transition:.15s;
+}
+
+.cell:hover{
+transform:translateY(-5px) scale(1.05);
+box-shadow:
+0 0 30px rgba(0,198,255,1),
+0 10px 0 #004fc5;
+}
+
+.cell:active{
+transform:translateY(4px);
+box-shadow:
+0 0 10px rgba(0,198,255,.8),
+0 2px 0 #004fc5;
+}
+
+.reset-btn{
+margin-top:20px;
+padding:15px 30px;
+font-size:20px;
+font-weight:bold;
+border:none;
+border-radius:15px;
+cursor:pointer;
+color:white;
+background:linear-gradient(135deg,#ff416c,#ff4b2b);
+box-shadow:
+0 0 20px rgba(255,75,43,.8),
+0 5px 0 #b12000;
+transition:.2s;
+}
+
+.reset-btn:hover{
+transform:scale(1.05);
+}
+
+.reset-btn:active{
+transform:translateY(3px);
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🎮 NUMBER BATTLE</h1>
+
+<div id="score">
+กำลังโหลด...
+</div>
+
+<div id="target">
+...
+</div>
+
+<div id="winner"></div>
+
+<button class="reset-btn" onclick="resetGame()">
+🔄 เริ่มเกมใหม่
+</button>
+
+<div id="board" class="grid"></div>
+
+<audio id="winSound">
+<source src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3">
+</audio>
+
+</div>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+getFirestore,
+doc,
+onSnapshot,
+updateDoc,
+getDoc
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyALX7PwzcjJxkPxn0n5I8kFFAiKkxYqI_0",
+  authDomain: "game-28f6f.firebaseapp.com",
+  projectId: "game-28f6f",
+  storageBucket: "game-28f6f.firebasestorage.app",
+  messagingSenderId: "68401090267",
+  appId: "1:68401090267:web:ddbabac9c390176de506fe",
+  measurementId: "G-3D4C11K8LW"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const gameDoc = doc(db,"game","game");
+
+const myID = prompt(
+"คุณคือใคร (P1 หรือ P2)",
+"P1"
+);
+
+window.resetGame = async () => {
+
+await updateDoc(gameDoc,{
+P1_Score:0,
+P2_Score:0,
+Target:Math.floor(Math.random()*10)+1
+});
+
+};
+
+onSnapshot(gameDoc,(snap)=>{
+
+const data = snap.data();
+
+document.getElementById("score").innerHTML =
+`🏆 P1 : ${data.P1_Score || 0}
+&nbsp;&nbsp; VS &nbsp;&nbsp;
+P2 : ${data.P2_Score || 0}`;
+
+document.getElementById("target").innerHTML =
+`🎯 ${data.Target || "?"}`;
+
+if((data.P1_Score || 0) >= 10){
+
+document.getElementById("winner").innerHTML =
+"👑 P1 ชนะ!";
+
+}
+else if((data.P2_Score || 0) >= 10){
+
+document.getElementById("winner").innerHTML =
+"👑 P2 ชนะ!";
+
+}
+else{
+
+document.getElementById("winner").innerHTML = "";
+
+}
+
+});
+
+const board = document.getElementById("board");
+
+for(let i=1;i<=10;i++){
+
+const btn = document.createElement("button");
+
+btn.className = "cell";
+btn.innerText = i;
+
+btn.onclick = async ()=>{
+
+const snap = await getDoc(gameDoc);
+
+const data = snap.data();
+
+if(i === data.Target){
+
+document.getElementById("winSound").play();
+
+const updateObj = {};
+
+updateObj[myID + "_Score"] =
+(data[myID + "_Score"] || 0) + 1;
+
+updateObj.Target =
+Math.floor(Math.random()*10)+1;
+
+await updateDoc(gameDoc,updateObj);
+
+}
+
+};
+
+board.appendChild(btn);
+
+}
+
+</script>
+
+</body>
+</html>
