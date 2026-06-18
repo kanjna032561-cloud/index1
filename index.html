@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บ้านแสนสุข - Nordic Sage Master Control</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght=300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #f4f3ef;       /* สีครีมเทาอุ่นสไตล์นอร์ดิก (Warm Stone) */
+            --card-bg: #ffffff;        
+            --text-main: #2d3748;      
+            --text-sub: #718096;       
+            --wall-color: #cbd5e0;     
+            --room-base: #e6ebe6;      /* สีเขียวตุ่นมินิมอล (Sage Green) ตอนปิดไฟ */
+            --active-color: #e68a00;   
+            --active-bg: #fff6e6;      /* สีครีมอมส้มทองนุ่มละมุน (Creamy Amber) ตอนเปิดไฟ */
+            --border-color: #e2e8f0;   
+        }
+
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 { 
+            margin: 0; 
+            font-size: 2.2rem; 
+            font-weight: 600;
+            color: #1a202c;
+            letter-spacing: -0.5px;
+        }
+        header p { 
+            margin: 6px 0 0 0; 
+            color: var(--text-sub); 
+            font-size: 0.95rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 35px;
+            align-items: start;
+        }
+
+        /* --- 📐 แปลนบ้านพิมพ์เขียวเดี่ยว ห้องละ 1 (Real Floor Plan Layout) --- */
+        .floor-plan-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.02);
+            border: 1px solid var(--border-color);
+        }
+
+        .floor-plan-card h2 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-main);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
+            letter-spacing: 0.3px;
+        }
+
+        /* ผัง Grid ลงล็อกสัดส่วนแบบสถาปัตยกรรมจริงตามรูปภาพ */
+        .house-blueprint {
+            display: grid;
+            grid-template-areas: 
+                "bedroom kitchen"
+                "living  kitchen"
+                "living  bathroom"
+                "front   bathroom";
+            grid-template-columns: 1.2fr 1fr;
+            grid-template-rows: 130px 100px 100px 90px;
+            gap: 12px;
+            background: #fafafa;
+            padding: 16px;
+            border-radius: 20px;
+            border: 1.5px solid var(--wall-color);
+        }
+
+        .room {
+            background: var(--room-base);
+            border: 1.5px solid #d1dbd1;
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .room i {
+            font-size: 1.25rem;
+            color: #8fa38f;
+            transition: all 0.3s ease;
+        }
+
+        .room span {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        /* พื้นที่ในระบบแปลน */
+        .area-bedroom  { grid-area: bedroom; }
+        .area-kitchen  { grid-area: kitchen; }
+        .area-living   { grid-area: living; }
+        .area-bathroom { grid-area: bathroom; }
+        
+        /* ระเบียงไม้หน้าบ้าน */
+       .area-front { 
+    grid-area: front; 
+}
+        
+        .area-front span { color: #705e4c; }
+        .area-front i { color: #9c8874; }
+
+        /* เอฟเฟกต์ไฟตอนเปิด สว่างอุ่นนุ่มนวลแบบมีระดับ (Ambient Light) */
+        .room.active {
+            background: var(--active-bg);
+            border-color: #fbd38d;
+            box-shadow: inset 0 0 15px rgba(230, 138, 0, 0.05);
+        }
+        .room.active i {
+            color: var(--active-color);
+        }
+        .room.active span {
+            color: #b76e00;
+        }
+
+        /* --- 🎛️ แผงสวิตช์และปุ่มควบคุมทั้งหมดด้านขวา --- */
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* ปุ่ม Master ควบคุมทั้งบ้าน ดีไซน์ใหม่ มินิมอลเรียบหรูโทนสีเท่ากัน */
+        .master-panel-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.01);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .master-title {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .master-title i { color: var(--text-sub); }
+
+        .master-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn-master {
+            background-color: #edf2f7; /* ใช้สีพื้นหลังสว่างแบบเดียวกัน */
+            color: #4a5568;
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            font-family: 'Kanit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-master:hover { 
+            background-color: #e2e8f0; 
+            transform: translateY(-1px); 
+        }
+
+        .control-card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.01);
+            transition: all 0.25s ease;
+        }
+
+        .control-card:hover {
+            border-color: #cbd5e0;
+            transform: translateY(-1px);
+        }
+
+        .room-info { display: flex; align-items: center; gap: 16px; }
+        
+        .room-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--room-base);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            color: #718096;
+            transition: all 0.3s ease;
+        }
+
+        .active .room-icon {
+            background: var(--active-bg);
+            color: var(--active-color);
+        }
+
+        .room-name h3 { margin: 0; font-size: 1rem; font-weight: 500; color: #2d3748; }
+        .room-name span { font-size: 0.8rem; color: var(--text-sub); }
+        .active .room-name span { color: var(--active-color); font-weight: 500; }
+
+        /* สวิตช์ท็อกเกิลดีไซน์พรีเมียมโค้งมน */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #e2e8f0;
+            transition: .3s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        input:checked + .slider { background-color: var(--active-color); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        @media (max-width: 900px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>HOME DASHBOARD</h1>
+        <p>ระบบตรวจสอบและควบคุมระบบแสงสว่างภายในบ้าน</p>
+    </header>
+
+    <div class="dashboard-grid">
+        <div class="floor-plan-card">
+            <h2><i class="fa-regular fa-map"></i> โครงสร้างและผังบริเวณ (Floor Plan Layout)</h2>
+            <div class="house-blueprint">
+                
+                <div class="room area-bedroom" id="plan-bedroom">
+                    <i class="fa-solid fa-bed"></i>
+                    <span>ห้องนอน</span>
+                </div>
+                
+                <div class="room area-kitchen" id="plan-kitchen">
+                    <i class="fa-solid fa-kitchen-set"></i>
+                    <span>ห้องครัว</span>
+                </div>
+                
+                <div class="room area-living" id="plan-living">
+                    <i class="fa-solid fa-couch"></i>
+                    <span>ห้องนั่งเล่น</span>
+                </div>
+                
+                <div class="room area-bathroom" id="plan-bathroom">
+                    <i class="fa-solid fa-bath"></i>
+                    <span>ห้องน้ำ</span>
+                </div>
+                
+                <div class="room area-front" id="plan-front">
+                    <i class="fa-solid fa-table-columns"></i>
+                    <span>ระเบียงหน้าบ้าน</span>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            
+            <div class="master-panel-card">
+                <div class="master-title">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>ควบคุมระบบหลัก (Master Control)</span>
+                </div>
+                <div class="master-buttons">
+                    <button class="btn-master" id="master-on-btn">
+                        <i class="fa-solid fa-lightbulb"></i> เปิดทั้งบ้าน
+                    </button>
+                    <button class="btn-master" id="master-off-btn">
+                        <i class="fa-solid fa-power-off"></i> ปิดทั้งบ้าน
+                    </button>
+                </div>
+            </div>
+
+            <div class="control-card" id="card-front">
+                <div class="room-info">
+                    <div class="room-icon"><i class="fa-solid fa-table-columns"></i></div>
+                    <div class="room-name"><h3>ระเบียงหน้าบ้าน</h3><span id="status-front">ปิดไฟ</span></div>
+                </div>
+                <label class="switch"><input type="checkbox" id="btn-front"><span class="slider"></span></label>
+            </div>
+            
+            <div class="control-card" id="card-bedroom">
+                <div class="room-info">
+                    <div class="room-icon"><i class="fa-solid fa-bed"></i></div>
+                    <div class="room-name"><h3>ห้องนอน</h3><span id="status-bedroom">ปิดไฟ</span></div>
+                </div>
+                <label class="switch"><input type="checkbox" id="btn-bedroom"><span class="slider"></span></label>
+            </div>
+
+            <div class="control-card" id="card-living">
+                <div class="room-info">
+                    <div class="room-icon"><i class="fa-solid fa-couch"></i></div>
+                    <div class="room-name"><h3>ห้องนั่งเล่น</h3><span id="status-living">ปิดไฟ</span></div>
+                </div>
+                <label class="switch"><input type="checkbox" id="btn-living"><span class="slider"></span></label>
+            </div>
+
+            <div class="control-card" id="card-kitchen">
+                <div class="room-info">
+                    <div class="room-icon"><i class="fa-solid fa-kitchen-set"></i></div>
+                    <div class="room-name"><h3>ห้องครัว</h3><span id="status-kitchen">ปิดไฟ</span></div>
+                </div>
+                <label class="switch"><input type="checkbox" id="btn-kitchen"><span class="slider"></span></label>
+            </div>
+
+            <div class="control-card" id="card-bathroom">
+                <div class="room-info">
+                    <div class="room-icon"><i class="fa-solid fa-bath"></i></div>
+                    <div class="room-name"><h3>ห้องน้ำ</h3><span id="status-bathroom">ปิดไฟ</span></div>
+                </div>
+                <label class="switch"><input type="checkbox" id="btn-bathroom"><span class="slider"></span></label>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyD8dRioIM27sKHpG9FrxinlUAsgVCuzxh0",
+        authDomain: "iot1-6a440.firebaseapp.com",
+        projectId: "iot1-6a440",
+        storageBucket: "iot1-6a440.firebasestorage.app",
+        messagingSenderId: "726387110602",
+        appId: "1:726387110602:web:62151dba9d15cc8a18fa33"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const homeDoc = doc(db, "IoT1", "all_rooms");
+    const rooms = ["front", "bedroom", "living", "kitchen", "bathroom"];
+
+    onSnapshot(homeDoc, (snap) => {
+        if (!snap.exists()) {
+            setDoc(homeDoc, { front:0, bedroom:0, living:0, kitchen:0, bathroom:0 });
+            return;
+        }
+
+        const data = snap.data();
+        rooms.forEach(room => {
+            const isActive = data[room] === 1;
+            
+            if(document.getElementById(`btn-${room}`)) {
+                document.getElementById(`btn-${room}`).checked = isActive;
+                document.getElementById(`status-${room}`).innerText = isActive ? "เปิดไฟอยู่" : "ปิดไฟ";
+                
+                if(isActive) {
+                    document.getElementById(`card-${room}`).classList.add('active');
+                    document.getElementById(`plan-${room}`).classList.add('active');
+                } else {
+                    document.getElementById(`card-${room}`).classList.remove('active');
+                    document.getElementById(`plan-${room}`).classList.remove('active');
+                }
+            }
+        });
+    });
+
+    rooms.forEach(room => {
+        const toggleBtn = document.getElementById(`btn-${room}`);
+        if(toggleBtn) {
+            toggleBtn.onchange = async (e) => {
+                const val = e.target.checked ? 1 : 0;
+                await setDoc(homeDoc, { [room]: val }, { merge: true });
+            };
+        }
+    });
+
+    document.getElementById("master-on-btn").onclick = async () => {
+        const allOn = { front: 1, bedroom: 1, living: 1, kitchen: 1, bathroom: 1 };
+        await setDoc(homeDoc, allOn, { merge: true });
+    };
+
+    document.getElementById("master-off-btn").onclick = async () => {
+        const allOff = { front: 0, bedroom: 0, living: 0, kitchen: 0, bathroom: 0 };
+        await setDoc(homeDoc, allOff, { merge: true });
+    };
+</script>
+
+</body>
+</html>
